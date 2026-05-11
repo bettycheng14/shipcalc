@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="mb-4">ShipCalc — Your Estimate</h1>
+
+<div class="card">
+  <div class="card-body">
+    <table class="table" id="result-table">
+      <tbody>
+        <tr>
+          <th scope="row">Destination</th>
+          <td>{{ region | capitalize }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Shipping Type</th>
+          <td>{{ shipping_type | capitalize }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Weight</th>
+          <td>{{ weight }} kg</td>
+        </tr>
+        <tr>
+          <th scope="row">Item Price</th>
+          <td>${{ item_price }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Shipping Fee</th>
+          <td id="shipping-fee">${{ shipping_fee }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Tax Amount</th>
+          <td id="tax-amount">${{ tax_amount }}</td>
+        </tr>
+        <tr class="table-primary fw-bold">
+          <th scope="row">Total</th>
+          <td id="total">${{ total }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<a href="/" class="btn btn-secondary mt-3">← Calculate Again</a>
+{% endblock %}

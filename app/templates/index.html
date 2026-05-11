@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="mb-4">ShipCalc — Estimate Your Shipping Cost</h1>
+
+<div class="row g-4">
+
+  <!-- Form column -->
+  <div class="col-md-5">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0">Shipment Details</h5>
+      </div>
+      <div class="card-body">
+
+        <div id="error-message" class="alert alert-danger d-none" role="alert"></div>
+
+        <form id="shipping-form" novalidate>
+          <div class="mb-3">
+            <label for="price" class="form-label">Item Price (AUD)</label>
+            <input type="text" class="form-control" id="price" name="price" placeholder="e.g. 99.99">
+          </div>
+
+          <div class="mb-3">
+            <label for="weight" class="form-label">Weight (kg)</label>
+            <input type="text" class="form-control" id="weight" name="weight" placeholder="e.g. 2.5">
+          </div>
+
+          <div class="mb-3">
+            <label for="region" class="form-label">Destination</label>
+            <select class="form-select" id="region" name="region">
+              <option value="">Select region...</option>
+              <option value="australia">Australia</option>
+              <option value="usa">USA</option>
+              <option value="europe">Europe</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="shipping_type" class="form-label">Shipping Type</label>
+            <select class="form-select" id="shipping_type" name="shipping_type">
+              <option value="">Select type...</option>
+              <option value="standard">Standard</option>
+              <option value="express">Express</option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100" id="calculate-btn">Calculate</button>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Result column -->
+  <div class="col-md-7">
+
+    <!-- Shown before any calculation -->
+    <div class="card h-100 border-dashed text-muted" id="placeholder-card">
+      <div class="card-body d-flex align-items-center justify-content-center">
+        <div class="text-center">
+          <div class="display-4">📦</div>
+          <p class="mt-2 mb-0">Your estimate will appear here</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shown after a successful calculation -->
+    <div class="card h-100 d-none" id="result-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Your Estimate</h5>
+        <button class="btn btn-sm btn-outline-secondary" id="reset-btn">New Calculation</button>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-borderless mb-0" id="result-table">
+          <tbody>
+            <tr>
+              <th class="ps-3">Destination</th>
+              <td id="result-region"></td>
+            </tr>
+            <tr>
+              <th class="ps-3">Shipping Type</th>
+              <td id="result-shipping-type"></td>
+            </tr>
+            <tr>
+              <th class="ps-3">Weight</th>
+              <td id="result-weight"></td>
+            </tr>
+            <tr>
+              <th class="ps-3">Item Price</th>
+              <td id="result-item-price"></td>
+            </tr>
+            <tr>
+              <th class="ps-3">Shipping Fee</th>
+              <td id="shipping-fee"></td>
+            </tr>
+            <tr>
+              <th class="ps-3">Tax Amount</th>
+              <td id="tax-amount"></td>
+            </tr>
+            <tr class="table-primary fw-bold">
+              <th class="ps-3">Total</th>
+              <td id="total"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const form = document.getElementById('shipping-form');
+const errorEl = document.getElementById('error-message');
+const resultCard = document.getElementById('result-card');
+const placeholderCard = document.getElementById('placeholder-card');
+const resetBtn = document.getElementById('reset-btn');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const btn = document.getElementById('calculate-btn');
+  btn.disabled = true;
+  btn.textContent = 'Calculating…';
+
+  try {
+    const response = await fetch('/calculate', {
+      method: 'POST',
+      body: new FormData(form),
+    });
+
+    const json = await response.json();
+
+    if (!response.ok) {
+      showError(json.error);
+    } else {
+      showResult(json);
+    }
+  } catch {
+    showError('An unexpected error occurred. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Calculate';
+  }
+});
+
+resetBtn.addEventListener('click', () => {
+  form.reset();
+  resultCard.classList.add('d-none');
+  placeholderCard.classList.remove('d-none');
+  errorEl.classList.add('d-none');
+  errorEl.textContent = '';
+});
+
+function showError(msg) {
+  errorEl.textContent = msg;
+  errorEl.classList.remove('d-none');
+  resultCard.classList.add('d-none');
+  placeholderCard.classList.remove('d-none');
+}
+
+function showResult(data) {
+  errorEl.classList.add('d-none');
+  errorEl.textContent = '';
+
+  document.getElementById('result-region').textContent = capitalise(data.region);
+  document.getElementById('result-shipping-type').textContent = capitalise(data.shipping_type);
+  document.getElementById('result-weight').textContent = data.weight + ' kg';
+  document.getElementById('result-item-price').textContent = 'A$' + data.item_price;
+  document.getElementById('shipping-fee').textContent = 'A$' + data.shipping_fee;
+  document.getElementById('tax-amount').textContent = 'A$' + data.tax_amount;
+  document.getElementById('total').textContent = 'A$' + data.total;
+
+  placeholderCard.classList.add('d-none');
+  resultCard.classList.remove('d-none');
+}
+
+function capitalise(s) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+</script>
+{% endblock %}
