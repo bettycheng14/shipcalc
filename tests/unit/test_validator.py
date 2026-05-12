@@ -125,3 +125,8 @@ def test_invalid_shipping_type():
     ok, err = validate_inputs("100.00", "5.0", "australia", "overnight")
     assert ok is False
     assert err is not None
+
+def test_empty_shipping_type():
+    ok, err = validate_inputs("100.00", "5.0", "australia", "")
+    assert ok is False
+    assert "required" in err.lower()
