@@ -1,4 +1,5 @@
 steps:
+  # Step 1: Install dependencies, run unit and integration tests
   - name: "python:3.11-slim"
     entrypoint: bash
     args:
@@ -7,6 +8,29 @@ steps:
         pip install -r requirements.txt -q
         pytest tests/unit tests/integration --cov=app --cov-report=term-missing -v
 
+  # Step 2: Install Chromium, start Flask, run Selenium end-to-end tests
+  - name: "python:3.11-slim"
+    entrypoint: bash
+    args:
+      - "-c"
+      - |
+        apt-get update -q && apt-get install -y -q chromium chromium-driver curl
+        pip install -r requirements.txt -q
+        python run.py &
+        FLASK_PID=$!
+        for i in $(seq 1 30); do
+          if curl -sf http://localhost:5000/ > /dev/null 2>&1; then
+            echo "Flask ready after ${i}s"
+            break
+          fi
+          sleep 1
+        done
+        CI=true pytest tests/selenium -v
+        STATUS=$?
+        kill $FLASK_PID 2>/dev/null || true
+        exit $STATUS
+
+  # Step 3: Build Docker image
   - name: "gcr.io/cloud-builders/docker"
     args:
       - "build"
@@ -14,11 +38,13 @@ steps:
       - "gcr.io/$PROJECT_ID/shipcalc:$COMMIT_SHA"
       - "."
 
+  # Step 4: Push Docker image to Container Registry
   - name: "gcr.io/cloud-builders/docker"
     args:
       - "push"
       - "gcr.io/$PROJECT_ID/shipcalc:$COMMIT_SHA"
 
+  # Step 5: Deploy to Cloud Run
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     entrypoint: gcloud
     args:

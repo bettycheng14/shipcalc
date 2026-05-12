@@ -1,3 +1,4 @@
+import os
 import pytest
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -13,7 +14,16 @@ def driver():
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    service = Service(ChromeDriverManager().install())
+    options.add_argument("--disable-gpu")
+    options.add_argument("--window-size=1920,1080")
+
+    if os.environ.get("CI"):
+        # Use system Chromium installed by apt-get in the Cloud Build container
+        options.binary_location = "/usr/bin/chromium"
+        service = Service("/usr/bin/chromedriver")
+    else:
+        service = Service(ChromeDriverManager().install())
+
     drv = webdriver.Chrome(service=service, options=options)
     yield drv
     drv.quit()
