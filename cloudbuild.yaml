@@ -17,18 +17,18 @@ steps:
         apt-get update -q && apt-get install -y -q chromium chromium-driver curl
         pip install -r requirements.txt -q
         python run.py &
-        FLASK_PID=$!
-        for i in $(seq 1 30); do
+        FLASK_PID=$$!
+        for i in $$(seq 1 30); do
           if curl -sf http://localhost:5000/ > /dev/null 2>&1; then
-            echo "Flask ready after ${i}s"
+            echo "Flask ready after $${i}s"
             break
           fi
           sleep 1
         done
         CI=true pytest tests/selenium -v
-        STATUS=$?
-        kill $FLASK_PID 2>/dev/null || true
-        exit $STATUS
+        STATUS=$$?
+        kill $$FLASK_PID 2>/dev/null || true
+        exit $$STATUS
 
   # Step 3: Build Docker image
   - name: "gcr.io/cloud-builders/docker"
